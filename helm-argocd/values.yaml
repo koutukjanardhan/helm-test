@@ -1,7 +1,7 @@
 # values.yaml
 replicaCount: 3
 image:
-  repository: my-app
+  repository: koutuk16/blue
   tag: latest
 containerPort: 80
 servicePort: 80
