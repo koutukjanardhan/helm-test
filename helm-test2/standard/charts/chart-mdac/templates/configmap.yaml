@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.appName }}-properties-{{ .Values.instanceName }}
+  namespace: {{ .Values.namespace }}
+data:
+  mdac.properties: |
+    mdac.appPrefix=TargetModel
+    jdbc.driverClassName=com.mysql.jdbc.Driver
+    jdbc.dialect=org.hibernate.dialect.MySQLDialect
+    jdbc.databaseurl={{ .Values.mdac_properties.jdbc_url }}
+    jdbc.databasedefaulturl={{ .Values.mdac_properties.jdbc_url }}/ldbinitdb
+    jdbc.username={{ .Values.mdac_properties.jdbc_username }}
+    jdbc.password={{ .Values.mdac_properties.jdbc_password }}
+    jdbc.maxWait=30000
+    jdbc.maxActive=300
+    jdbc.maxTotal=1000
+    jdbc.maxIdle=10
+    jdbc.minIdle=1
+    jdbc.minEvictableIdleTimeMillis=60000
+    jdbc.timeBetweenEvictionRunsMillis=30000
+    jdbc.removeAbandonedTimeout=60000
+    jdbc.removeAbandoned=TRUE
+    ldap.baseurl={{ .Values.mdac_properties.ldap_baseUrl }}
+    ldap.url={{ .Values.mdac_properties.ldap_url }}
+    ldap.password={{ .Values.mdac_properties.ldap_password }}
+    ldap.manager=uid=admin,ou=system
+    password.salt={{ .Values.mdac_properties.password_salt }}
+    maxQueryResultSize=1000
+    mr.url={{ .Values.mdac_properties.mr_url }}
+    db.filesize.threshold=0
+    airflowutil.type=local
+    k8s.docker_registry={{ .Values.mdac_properties.docker_registry }}
+    {{- with (first .Values.imagePullSecrets) }}
+    k8s.image_pull_secret={{ .name }}
+    {{- end }}
+    k8s.cluster_name=
+    k8s.namespace=
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.appName }}-version-properties-{{ .Values.instanceName }}
+  namespace: {{ .Values.namespace }}
+data:
+  mdac.version.properties: |
+    # Version number of mr/mdac
+    com.numerify.mr.mdac.version={{ .Values.appVersion }}
+    mdac.buildId={{ .Values.buildId }}
+    com.numerify.mr.schema.version=1
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.appName }}-airflow-ssh-key-{{ .Values.instanceName }}
+  namespace: {{ .Values.namespace }}
+data:
+  airflowuser.key: |-
+{{ .Files.Get "airflow/airflow-ssh-key" | indent 4 }}

@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}-{{ .Values.instanceName }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "standard.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "standard.selectorLabels" . | nindent 6 }}
+      appName: {{ .Values.appName }}-{{ .Values.instanceName }}
+      appVersion: {{ .Values.appVersion }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "standard.selectorLabels" . | nindent 8 }}
+        appName: {{ .Values.appName }}-{{ .Values.instanceName }}
+        appVersion: {{ .Values.appVersion }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.appName }}-service-account
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.appName }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - #name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /TargetModel/utilities/heartbeat
+              port: 8080
+            initialDelaySeconds: {{ .Values.probes.livenessInitialDelaySecs }}
+            timeoutSeconds: {{ .Values.probes.livenessTimeoutSeconds }}
+            failureThreshold: {{ .Values.probes.livenessFailureThreshold }}
+            periodSeconds: {{ .Values.probes.livenessPeriodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /TargetModel/utilities/mdacversion
+              port: 8080
+            initialDelaySeconds: {{ .Values.probes.readinessInitialDelaySecs }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: "SERVICE_NAME"
+              value: {{ .Values.appName }}-service-{{ .Values.instanceName }}
+            - name: "INTELLIGENCE_ENVIRONMENT"
+              value: {{ .Values.intelligence_environment }}
+            - name: "INSTANCE_NAME"
+              value: "{{ .Values.instanceName }}"
+              {{ range .Values.environmentVariables }}
+            - name: {{ .name }}
+              value: {{ .value }}
+              {{- end }}
+          volumeMounts:
+            - name: "mdac-properties"
+              mountPath: {{ .Values.applicationConfigDir }}/mdac.properties
+              subPath: mdac.properties
+              readOnly: true
+            - name: "mdac-version-properties"
+              mountPath: {{ .Values.applicationConfigDir }}/mdac.version.properties
+              subPath: mdac.version.properties
+              readOnly: true
+            - name: "mdac-airflow-ssh-key"
+              mountPath: {{ .Values.homeDir }}/airflowuser.key
+              subPath: airflowuser.key
+              readOnly: true
+      volumes:
+        - name: "mdac-properties"
+          configMap:
+            name: {{ .Values.appName }}-properties-{{ .Values.instanceName }}
+        - name: "mdac-version-properties"
+          configMap:
+            name: {{ .Values.appName }}-version-properties-{{ .Values.instanceName }}
+        - name: "mdac-airflow-ssh-key"
+          configMap:
+            name: {{ .Values.appName }}-airflow-ssh-key-{{ .Values.instanceName }}
+            defaultMode: 0500
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
