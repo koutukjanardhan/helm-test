@@ -1,0 +1,92 @@
+# Default values for standard deployment.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+appName: "mdac"
+appVersion: ""
+
+# Deliberately set to unknown so that it fails
+namespace: "unknown"
+
+intelligence_environment: ""
+
+# NOTE: To be supplied from command line
+buildId: "LocalDevelopment"
+
+serverless: false
+
+# TODO: Update when we move to non-admin user
+homeDir: /root
+
+applicationConfigDir: /opt/application/config
+
+mdac_properties:
+  jdbc_url: ""
+  jdbc_username: ""
+  jdbc_password: ""
+  ldap_baseUrl: ""
+  ldap_url: ""
+  ldap_password: ""
+  password_salt: ""
+  mr_url: ""
+  docker_registry: ""
+
+replicaCount: 1
+
+image:
+  repository: ""
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets:
+  - name: ""
+nameOverride: ""
+fullnameOverride: ""
+
+probes:
+  readinessInitialDelaySecs: 120
+  livenessInitialDelaySecs: 180
+  livenessTimeoutSeconds: 10
+  livenessFailureThreshold: 10
+  livenessPeriodSeconds: 60
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  requests:
+    cpu: ""
+    memory: ""
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
+  # targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+environmentVariables:
+  - name: CATALINA_OPTS
+    value: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9000 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+  - name: JAVA_OPTS
+    value: "-XX:+CMSClassUnloadingEnabled -XX:+CMSPermGenSweepingEnabled -XX:+UseConcMarkSweepGC -XX:MaxPermSize=2048m -Xmx12000m"  
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
